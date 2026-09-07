@@ -1,21 +1,21 @@
 name: Build Exynos 990 Kernel with Latest KSU Next
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04 
-
+    runs-on: ubuntu-latest
+    
     steps:
     - name: Checkout Kernel Source
       uses: actions/checkout@v4
-
+      
     - name: Install Build Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential bc bison flex libssl-dev make libc6-dev libncurses5-dev crossbuild-essential-arm64 git zip curl patch
-
+        
     - name: Update KernelSU Next & Apply SuSFS Patch
       run: |
         # 1. Delete the old version bundled in the repo
@@ -31,7 +31,7 @@ jobs:
         cd KernelSU-Next
         patch -p1 < ../ksu_susfs.patch
         cd ..
-
+        
     - name: Download Toolchains
       run: |
         mkdir -p ../tc
@@ -42,7 +42,7 @@ jobs:
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-repo
         mv clang-repo/clang-r370808 clang10
         rm -rf clang-repo
-
+        
     - name: Build the Kernel
       run: |
         export CLANG_DIR=$(pwd)/../tc/clang10
@@ -50,12 +50,12 @@ jobs:
         
         chmod +x build.sh
         
-        # NOTE: Change y2s to x1s here if you have the base Galaxy S20
+        # Note: y2s is the codename for your Galaxy S20+. 
+        # If your script specifically expects the model number instead, change y2s to g985f.
         ./build.sh -m y2s
-
+        
     - name: Upload Kernel Image
       uses: actions/upload-artifact@v4
       with:
         name: kernel-image
         path: out_y2s/arch/arm64/boot/Image
-
