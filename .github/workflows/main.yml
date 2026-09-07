@@ -22,10 +22,10 @@ jobs:
         rm -rf KernelSU-Next
         git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
         
-    - name: Download Toolchains
+    - name: Download Toolchains Inside Workspace
       run: |
-        mkdir -p ../tc
-        cd ../tc
+        mkdir -p toolchain
+        cd toolchain
         
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 aarch64-linux-android-4.9
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 arm-linux-androideabi-4.9
@@ -33,11 +33,11 @@ jobs:
         
     - name: Build the Kernel
       run: |
-        export CLANG_DIR=$(pwd)/../tc/clang10
-        export GCC_DIR=$(pwd)/../tc/aarch64-linux-android-4.9
-        export GCC_32_DIR=$(pwd)/../tc/arm-linux-androideabi-4.9
+        export CLANG_DIR=$(pwd)/toolchain/clang10
+        export GCC_DIR=$(pwd)/toolchain/aarch64-linux-android-4.9
+        export GCC_32_DIR=$(pwd)/toolchain/arm-linux-androideabi-4.9
         
-        # Inject absolute toolchain paths directly into build.sh to prevent path overrides
+        # Override build.sh internal path variables
         sed -i "s|CLANG_PATH=.*|CLANG_PATH=${CLANG_DIR}|g" build.sh || true
         sed -i "s|GCC_PATH=.*|GCC_PATH=${GCC_DIR}|g" build.sh || true
         sed -i "s|GCC_32_PATH=.*|GCC_32_PATH=${GCC_32_DIR}|g" build.sh || true
