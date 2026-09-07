@@ -49,11 +49,14 @@ jobs:
         echo "Downloading GCC 4.9..."
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 gcc49
         
-        echo "Downloading AOSP Clang 10 (r370808)..."
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/linux-x86/clang-r370808 clang10
+        echo "Downloading AOSP Clang 10..."
+        # Using a mirror since android.googlesource.com repo may not be accessible
+        curl -L -o clang10.tar.gz https://github.com/LineageOS/android_prebuilts_clang_linux-x86_clang-10/archive/refs/heads/lineage-19.1.tar.gz
+        tar -xzf clang10.tar.gz
+        mv android_prebuilts_clang_linux-x86_clang-10-lineage-19.1 clang10
         
-        [ -f gcc49/bin/aarch64-linux-android-gcc ] || { echo "ERROR: GCC 4.9 not found"; exit 1; }
-        [ -f clang10/bin/clang ] || { echo "ERROR: Clang 10 not found"; exit 1; }
+        [ -d gcc49/bin ] || { echo "ERROR: GCC 4.9 not found"; exit 1; }
+        [ -d clang10/bin ] || { echo "ERROR: Clang 10 not found"; exit 1; }
         
         echo "✓ Toolchains downloaded and verified!"
         
