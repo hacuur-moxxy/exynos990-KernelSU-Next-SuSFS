@@ -15,7 +15,7 @@ jobs:
       run: |
         sudo dpkg --add-architecture i386
         sudo apt-get update
-        sudo apt-get install -y build-essential bc bison flex libssl-dev make libc6-dev libncurses5-dev libncurses-dev crossbuild-essential-arm64 git zip curl patch gcc-multilib g++-multilib libc6:i386 lib32z1
+        sudo apt-get install -y build-essential bc bison flex libssl-dev make libc6-dev libncurses5-dev libncurses-dev crossbuild-essential-arm64 git zip curl patch libc6:i386 lib32z1 libstdc++6:i386
         
     - name: Update KernelSU Next
       run: |
