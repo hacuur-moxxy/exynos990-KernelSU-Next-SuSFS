@@ -22,31 +22,21 @@ jobs:
         rm -rf KernelSU-Next
         git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
         
-    - name: Download Toolchains Inside Workspace
+    - name: Download Official Toolchains (AOSP Clang r370808 & GCC 4.9)
       run: |
-        mkdir -p toolchain
-        cd toolchain
+        mkdir -p ../tc
+        cd ../tc
         
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 aarch64-linux-android-4.9
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 arm-linux-androideabi-4.9
-        git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang10
+        # Clone GCC 4.9 into the exact folder build.sh expects
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 gcc49
+        
+        # Clone AOSP Clang r370808 (Clang 10.0.1) into clang10 as required by the Exynos 990 guide
+        git clone --depth=1 -b r370808 https://github.com/Nicklas373/aosp-clang.git clang10
         
     - name: Build the Kernel
       run: |
-        export CLANG_DIR=$(pwd)/toolchain/clang10
-        export GCC_DIR=$(pwd)/toolchain/aarch64-linux-android-4.9
-        export GCC_32_DIR=$(pwd)/toolchain/arm-linux-androideabi-4.9
-        
-        # Override build.sh internal path variables
-        sed -i "s|CLANG_PATH=.*|CLANG_PATH=${CLANG_DIR}|g" build.sh || true
-        sed -i "s|GCC_PATH=.*|GCC_PATH=${GCC_DIR}|g" build.sh || true
-        sed -i "s|GCC_32_PATH=.*|GCC_32_PATH=${GCC_32_DIR}|g" build.sh || true
-        
-        export ARCH=arm64
-        export SUBARCH=arm64
-        export CROSS_COMPILE=${GCC_DIR}/bin/aarch64-linux-android-
-        export CROSS_COMPILE_ARM32=${GCC_32_DIR}/bin/arm-linux-androideabi-
-        export PATH="${CLANG_DIR}/bin:${GCC_DIR}/bin:${GCC_32_DIR}/bin:${PATH}"
+        export CLANG_DIR=$(pwd)/../tc/clang10
+        export GCC_DIR=$(pwd)/../tc/gcc49
         
         chmod +x build.sh
         ./build.sh -m g985f
