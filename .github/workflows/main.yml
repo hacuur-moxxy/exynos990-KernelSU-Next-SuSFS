@@ -15,92 +15,39 @@ jobs:
       run: |
         sudo dpkg --add-architecture i386
         sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          bc \
-          bison \
-          flex \
-          libssl-dev \
-          make \
-          libc6-dev \
-          libncurses5-dev \
-          crossbuild-essential-arm64 \
-          git \
-          zip \
-          curl \
-          patch \
-          libc6:i386 \
-          lib32z1 \
-          libncurses5:i386 || true
-        
-        echo "✓ Build dependencies installed"
+        sudo apt-get install -y build-essential bc bison flex libssl-dev make libc6-dev libncurses5-dev libncurses-dev crossbuild-essential-arm64 git zip curl patch gcc-multilib g++-multilib libc6:i386 lib32z1
         
     - name: Update KernelSU Next
       run: |
         rm -rf KernelSU-Next
         git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
-        echo "✓ KernelSU-Next updated"
         
     - name: Download Toolchains
       run: |
         mkdir -p ../tc
         cd ../tc
         
-        echo "Downloading GCC 4.9..."
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 gcc49
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang10
         
-        echo "Downloading AOSP Clang 10..."
-        # Using a mirror since android.googlesource.com repo may not be accessible
-        curl -L -o clang10.tar.gz https://github.com/LineageOS/android_prebuilts_clang_linux-x86_clang-10/archive/refs/heads/lineage-19.1.tar.gz
-        tar -xzf clang10.tar.gz
-        mv android_prebuilts_clang_linux-x86_clang-10-lineage-19.1 clang10
-        
-        [ -d gcc49/bin ] || { echo "ERROR: GCC 4.9 not found"; exit 1; }
-        [ -d clang10/bin ] || { echo "ERROR: Clang 10 not found"; exit 1; }
-        
-        echo "✓ Toolchains downloaded and verified!"
-        
-    - name: Build the Kernel (g985f)
+    - name: Build the Kernel
       run: |
+        # Define toolchain paths
         export CLANG_DIR=$(pwd)/../tc/clang10
         export GCC_DIR=$(pwd)/../tc/gcc49
+        export PATH="${CLANG_DIR}/bin:${GCC_DIR}/bin:${PATH}"
+        
+        # Force the modern Ubuntu host compiler to disable .relr.dyn compression
+        export KBUILD_HOSTLDFLAGS="-Wl,-z,nopack-relative-relocs"
+        export HOSTLDFLAGS="-Wl,-z,nopack-relative-relocs"
+        export PROTOC_EXTRA_LDFLAGS="-Wl,-z,nopack-relative-relocs"
+        
         chmod +x build.sh
-        echo "Building for SM-G985F (Galaxy S20+ 4G)..."
+        
         ./build.sh -m g985f
         
-    - name: Generate Build Info
-      if: success()
-      run: |
-        IMG="out_g985f/arch/arm64/boot/Image"
-        if [ -f "$IMG" ]; then
-          SIZE=$(stat -c%s "$IMG")
-          echo "✓ Build completed successfully!"
-          echo "Kernel Image: $IMG"
-          echo "Size: $SIZE bytes"
-          echo "" > build_info.txt
-          echo "=== Kernel Build Info ===" >> build_info.txt
-          echo "Device: SM-G985F (Galaxy S20+ 4G)" >> build_info.txt
-          echo "Image Size: $SIZE bytes" >> build_info.txt
-          echo "MD5: $(md5sum $IMG | cut -d' ' -f1)" >> build_info.txt
-          echo "SHA256: $(sha256sum $IMG | cut -d' ' -f1)" >> build_info.txt
-          echo "Build Date: $(date)" >> build_info.txt
-          cat build_info.txt
-        fi
-        
     - name: Upload Kernel Image
-      if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: kernel-g985f-${{ github.run_number }}
-        path: |
-          out_g985f/arch/arm64/boot/Image
-          build_info.txt
-        retention-days: 30
-        
-    - name: Upload Build Logs on Failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs-g985f-${{ github.run_number }}
-        path: out_g985f/
-        retention-days: 7
+        name: kernel-image
+        path: out_g985f/arch/arm64/boot/Image
