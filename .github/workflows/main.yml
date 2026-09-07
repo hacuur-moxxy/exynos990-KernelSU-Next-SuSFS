@@ -16,21 +16,13 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential bc bison flex libssl-dev make libc6-dev libncurses5-dev crossbuild-essential-arm64 git zip curl patch
         
-    - name: Update KernelSU Next & Apply SuSFS Patch
+    - name: Update KernelSU Next
       run: |
         # 1. Delete the old version bundled in the repo
         rm -rf KernelSU-Next
         
-        # 2. Clone the absolute latest 'next' branch
-        git clone https://github.com/KernelSU-Next/KernelSU-Next.git -b next KernelSU-Next
-        
-        # 3. Download the SuSFS patch for KSU
-        curl -LSs "https://gitlab.com/simonpunk/susfs4ksu/-/raw/susfs-v1.5.2/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" -o ksu_susfs.patch
-        
-        # 4. Apply the patch to the new KSU folder
-        cd KernelSU-Next
-        patch -p1 < ../ksu_susfs.patch
-        cd ..
+        # 2. Clone the latest KernelSU-Next repository using the default active branch
+        git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
         
     - name: Download Toolchains
       run: |
@@ -50,8 +42,6 @@ jobs:
         
         chmod +x build.sh
         
-        # Note: y2s is the codename for your Galaxy S20+. 
-        # If your script specifically expects the model number instead, change y2s to g985f.
         ./build.sh -m y2s
         
     - name: Upload Kernel Image
