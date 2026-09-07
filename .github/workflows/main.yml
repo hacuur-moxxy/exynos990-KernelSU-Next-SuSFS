@@ -2,18 +2,6 @@ name: Build Exynos 990 Kernel with Latest KSU Next
 
 on:
   workflow_dispatch:
-    inputs:
-      model:
-        description: 'Device model'
-        required: true
-        default: 'g985f'
-        type: choice
-        options:
-          - g985f
-          - g980f
-          - g988b
-          - g986b
-          - g981b
 
 jobs:
   build:
@@ -25,6 +13,7 @@ jobs:
       
     - name: Install Build Dependencies
       run: |
+        sudo dpkg --add-architecture i386
         sudo apt-get update
         sudo apt-get install -y \
           build-essential \
@@ -41,18 +30,16 @@ jobs:
           curl \
           patch \
           libc6:i386 \
-          libstdc++6:i386 \
           lib32z1 \
-          libncurses5:i386 \
-          zlib1g:i386
+          libncurses5:i386 || true
+        
+        echo "✓ Build dependencies installed"
         
     - name: Update KernelSU Next
       run: |
-        # Remove old bundled version
         rm -rf KernelSU-Next
-        
-        # Clone latest KernelSU-Next
         git clone https://github.com/KernelSU-Next/KernelSU-Next.git KernelSU-Next
+        echo "✓ KernelSU-Next updated"
         
     - name: Download Toolchains
       run: |
@@ -65,45 +52,45 @@ jobs:
         echo "Downloading AOSP Clang 10 (r370808)..."
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/linux-x86/clang-r370808 clang10
         
-        # Verify toolchains exist
         [ -f gcc49/bin/aarch64-linux-android-gcc ] || { echo "ERROR: GCC 4.9 not found"; exit 1; }
         [ -f clang10/bin/clang ] || { echo "ERROR: Clang 10 not found"; exit 1; }
         
-    - name: Build the Kernel
+        echo "✓ Toolchains downloaded and verified!"
+        
+    - name: Build the Kernel (g985f)
       run: |
         export CLANG_DIR=$(pwd)/../tc/clang10
         export GCC_DIR=$(pwd)/../tc/gcc49
-        
         chmod +x build.sh
-        
-        # Use input model or default to g985f
-        MODEL="${{ github.event.inputs.model || 'g985f' }}"
-        echo "Building for model: $MODEL"
-        
-        ./build.sh -m "$MODEL"
+        echo "Building for SM-G985F (Galaxy S20+ 4G)..."
+        ./build.sh -m g985f
         
     - name: Generate Build Info
       if: success()
       run: |
-        MODEL="${{ github.event.inputs.model || 'g985f' }}"
-        IMG="out_${MODEL}/arch/arm64/boot/Image"
-        
+        IMG="out_g985f/arch/arm64/boot/Image"
         if [ -f "$IMG" ]; then
           SIZE=$(stat -c%s "$IMG")
-          echo "Build completed successfully!"
+          echo "✓ Build completed successfully!"
           echo "Kernel Image: $IMG"
           echo "Size: $SIZE bytes"
-          echo "MD5: $(md5sum $IMG | cut -d' ' -f1)" > build_info.txt
+          echo "" > build_info.txt
+          echo "=== Kernel Build Info ===" >> build_info.txt
+          echo "Device: SM-G985F (Galaxy S20+ 4G)" >> build_info.txt
+          echo "Image Size: $SIZE bytes" >> build_info.txt
+          echo "MD5: $(md5sum $IMG | cut -d' ' -f1)" >> build_info.txt
           echo "SHA256: $(sha256sum $IMG | cut -d' ' -f1)" >> build_info.txt
+          echo "Build Date: $(date)" >> build_info.txt
+          cat build_info.txt
         fi
         
     - name: Upload Kernel Image
       if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: kernel-${{ github.event.inputs.model || 'g985f' }}-${{ github.run_number }}
+        name: kernel-g985f-${{ github.run_number }}
         path: |
-          out_${{ github.event.inputs.model || 'g985f' }}/arch/arm64/boot/Image
+          out_g985f/arch/arm64/boot/Image
           build_info.txt
         retention-days: 30
         
@@ -111,6 +98,6 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: build-logs-${{ github.event.inputs.model || 'g985f' }}-${{ github.run_number }}
-        path: out_${{ github.event.inputs.model || 'g985f' }}/
+        name: build-logs-g985f-${{ github.run_number }}
+        path: out_g985f/
         retention-days: 7
