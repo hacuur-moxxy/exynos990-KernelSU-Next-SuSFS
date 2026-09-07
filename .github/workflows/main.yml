@@ -29,11 +29,11 @@ jobs:
         mkdir -p ../tc
         cd ../tc
         
+        # Download GCC 4.9
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 gcc49
         
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 clang-repo
-        mv clang-repo/clang-r370808 clang10
-        rm -rf clang-repo
+        # Download Proton Clang (Replaces the broken AOSP Clang 10)
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang10
         
     - name: Build the Kernel
       run: |
