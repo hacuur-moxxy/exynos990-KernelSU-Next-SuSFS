@@ -27,7 +27,6 @@ jobs:
         mkdir -p ../tc
         cd ../tc
         
-        # Clone with exact folder names expected by Exynos build scripts
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 aarch64-linux-android-4.9
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 arm-linux-androideabi-4.9
         git clone --depth=1 https://github.com/kdrag0n/proton-clang.git clang10
@@ -37,6 +36,12 @@ jobs:
         export CLANG_DIR=$(pwd)/../tc/clang10
         export GCC_DIR=$(pwd)/../tc/aarch64-linux-android-4.9
         export GCC_32_DIR=$(pwd)/../tc/arm-linux-androideabi-4.9
+        
+        # Explicitly export cross-compile prefixes and architecture paths
+        export ARCH=arm64
+        export SUBARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-android-
+        export CROSS_COMPILE_ARM32=arm-linux-androideabi-
         export PATH="${CLANG_DIR}/bin:${GCC_DIR}/bin:${GCC_32_DIR}/bin:${PATH}"
         
         chmod +x build.sh
